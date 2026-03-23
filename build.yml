@@ -1,0 +1,75 @@
+name: Build Ninja Executor
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build React frontend
+      run: npm run build
+      
+    - name: Setup MinGW
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: >-
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-make
+          
+    - name: Build C++ Engine
+      shell: msys2 {0}
+      run: |
+        mkdir -p cpp_engine/build/Release
+        cd cpp_engine/build
+        cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+        mingw32-make -j$(nproc)
+        
+    - name: Build Electron App
+      run: npx electron-packager . NinjaExecutor --platform=win32 --arch=x64 --out=dist-electron --overwrite --asar
+      
+    - name: Copy Engine Files
+      run: |
+        mkdir -p dist-electron/NinjaExecutor-win32-x64/engine
+        copy cpp_engine/build/Release/ninja_engine.dll dist-electron/NinjaExecutor-win32-x64/engine/
+        copy cpp_engine/build/Release/NinjaInjector.exe dist-electron/NinjaExecutor-win32-x64/engine/
+      shell: cmd
+      continue-on-error: true
+      
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: NinjaExecutor-Windows
+        path: dist-electron/NinjaExecutor-win32-x64/
+        compression-level: 6
+        
+    - name: Create Release ZIP
+      run: |
+        cd dist-electron
+        7z a -tzip NinjaExecutor-Windows.zip NinjaExecutor-win32-x64/
+      
+    - name: Upload Release ZIP
+      uses: actions/upload-artifact@v4
+      with:
+        name: NinjaExecutor-Windows-ZIP
+        path: dist-electron/NinjaExecutor-Windows.zip

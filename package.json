@@ -1,0 +1,96 @@
+{
+  "name": "ninja-executor",
+  "version": "1.0.0",
+  "description": "Roblox Executor with React UI and C++ DLL Engine",
+  "main": "main.cjs",
+  "homepage": "./",
+  "author": "Ninja Team",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run build:react && npm run build:electron",
+    "build:react": "vite build",
+    "build:cpp": "cd cpp_engine && build.bat",
+    "build:electron": "electron-builder build --windows",
+    "build:all": "build_all.bat",
+    "electron:dev": "electron .",
+    "electron:build": "npm run build && npm run build:electron",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.14",
+    "@vitejs/plugin-react": "^5.0.4",
+    "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.21",
+    "concurrently": "^8.2.2",
+    "electron": "^30.0.0",
+    "electron-builder": "^26.8.1",
+    "electron-packager": "^17.1.2",
+    "tailwindcss": "^4.1.14",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.ninja.executor",
+    "productName": "Ninja Executor",
+    "copyright": "Copyright © 2024 Ninja Team",
+    "directories": {
+      "output": "dist-electron",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "main.cjs",
+      "preload.cjs",
+      "cpp_engine/bridge.js",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "cpp_engine/build/Release/",
+        "to": "engine/",
+        "filter": [
+          "*.dll",
+          "*.exe"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "icon.ico",
+      "requestedExecutionLevel": "requireAdministrator"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Ninja Executor"
+    },
+    "portable": {
+      "artifactName": "NinjaExecutor-Portable-${version}.exe"
+    }
+  }
+}
